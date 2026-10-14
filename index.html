@@ -293,6 +293,7 @@ function step() {
     score += 10;
     eaten += 1;
     scoreEl.textContent = score;
+    saveBest();
     tickMs = Math.max(75, 145 - eaten * 4);
     food = spawnFood(false);
     const milestone = ACHIEVEMENTS.find(([n]) => n === eaten);
