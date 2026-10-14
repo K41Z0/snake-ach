@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Snake yolo — съешь свою ачивку</title>
+<title>Snake yolo — eat your achievements</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -139,22 +139,22 @@
 <body>
 <header>
   <h1>Snake <span>yolo</span></h1>
-  <p>Кушай YOLO-ачивки и расти. Рекорд остаётся в этом браузере.</p>
+  <p>Eat YOLO achievements and grow. The record stays in this browser.</p>
 </header>
 
 <div class="hud">
-  <div><small>Счёт</small><b id="score">0</b></div>
-  <div><small>Рекорд</small><b id="best">0</b></div>
+  <div><small>Score</small><b id="score">0</b></div>
+  <div><small>Best</small><b id="best">0</b></div>
 </div>
 
 <div class="stage">
   <canvas id="game" width="480" height="480"></canvas>
   <div id="toast"></div>
   <div id="overlay">
-    <h2 id="ov-title">Готов?</h2>
-    <p id="ov-text">Стрелки или WASD — движение. <kbd>Space</kbd> — пауза.</p>
+    <h2 id="ov-title">Ready?</h2>
+    <p id="ov-text">Arrows or WASD to move. <kbd>Space</kbd> to pause.</p>
     <p class="big" id="ov-score"></p>
-    <p id="ov-hint">Нажми <kbd>Enter</kbd> или ткни в поле, чтобы начать</p>
+    <p id="ov-hint">Press <kbd>Enter</kbd> or tap the board to start</p>
   </div>
 </div>
 
@@ -165,7 +165,7 @@
   <button class="right" data-dir="right">▶</button>
 </div>
 
-<footer>Один файл, без зависимостей: скачал — открыл — играешь.</footer>
+<footer>One file, no dependencies: download it, open it, play.</footer>
 
 <script>
 const CELLS = 20;
@@ -211,12 +211,12 @@ function loadBest() {
 function saveBest() {
   if (score > best) {
     best = score;
-    try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) { /* приватный режим */ }
+    try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) { /* private mode */ }
     bestEl.textContent = best;
   }
 }
 
-// Первая ачивка всегда прямо по курсу — первый укус без погони.
+// The first badge always sits straight ahead, so the opening bite needs no chase.
 function spawnFood(first) {
   if (first) return { x: 12, y: 10 };
   const free = [];
@@ -243,10 +243,10 @@ function reset() {
   over = false;
   scoreEl.textContent = "0";
   overlay.hidden = false;
-  ovTitle.textContent = "Готов?";
-  ovText.innerHTML = "Стрелки или WASD — движение. <kbd>Space</kbd> — пауза.";
+  ovTitle.textContent = "Ready?";
+  ovText.innerHTML = "Arrows or WASD to move. <kbd>Space</kbd> to pause.";
   ovScore.textContent = "";
-  ovHint.innerHTML = 'Нажми <kbd>Enter</kbd> или ткни в поле, чтобы начать';
+  ovHint.innerHTML = 'Press <kbd>Enter</kbd> or tap the board to start';
   draw();
 }
 
@@ -263,12 +263,12 @@ function gameOver() {
   over = true;
   saveBest();
   overlay.hidden = false;
-  ovTitle.textContent = "Игра окончена";
-  ovText.textContent = `Съедено ачивок: ${eaten}`;
-  ovScore.textContent = `Счёт ${score}`;
+  ovTitle.textContent = "Game over";
+  ovText.textContent = `Badges eaten: ${eaten}`;
+  ovScore.textContent = `Score ${score}`;
   ovHint.innerHTML = score >= best && score > 0
-    ? 'Новый рекорд! <kbd>Enter</kbd> — сыграть ещё'
-    : `Рекорд ${best}. <kbd>Enter</kbd> — сыграть ещё`;
+    ? 'New record! <kbd>Enter</kbd> to play again'
+    : `Best ${best}. <kbd>Enter</kbd> to play again`;
   draw();
 }
 
@@ -297,7 +297,7 @@ function step() {
     tickMs = Math.max(75, 145 - eaten * 4);
     food = spawnFood(false);
     const milestone = ACHIEVEMENTS.find(([n]) => n === eaten);
-    if (milestone) showToast(`Ачивка: ${milestone[1]}`);
+    if (milestone) showToast(`Achievement: ${milestone[1]}`);
   } else {
     snake.pop();
   }
@@ -362,7 +362,7 @@ function draw() {
     ctx.fillRect(0, 0, size, size);
     ctx.fillStyle = "#e6edf3";
     ctx.font = `600 ${size * 0.055}px -apple-system, Segoe UI, sans-serif`;
-    ctx.fillText("Пауза", size / 2, size / 2);
+    ctx.fillText("Paused", size / 2, size / 2);
   }
 }
 
@@ -386,7 +386,7 @@ document.addEventListener("keydown", (e) => {
   const map = {
     ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
     w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0],
-    ц: [0, -1], ы: [0, 1], ф: [-1, 0], в: [1, 0],
+
   };
   const lower = k.length === 1 ? k.toLowerCase() : k;
   if (map[lower]) {
@@ -400,7 +400,7 @@ document.addEventListener("keydown", (e) => {
     if (over) return start();
     if (!running) return start();
     paused = !paused;
-    if (paused) { overlay.hidden = false; ovTitle.textContent = "Пауза"; ovText.textContent = "Space — продолжить"; ovScore.textContent = ""; ovHint.textContent = ""; }
+    if (paused) { overlay.hidden = false; ovTitle.textContent = "Paused"; ovText.textContent = "Space to resume"; ovScore.textContent = ""; ovHint.textContent = ""; }
     else overlay.hidden = true;
     draw();
     return;

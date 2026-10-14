@@ -9,7 +9,7 @@ Download `index.html` and open it in any browser — the whole game is that one 
 
 ## Play
 
-- **Arrow keys** or **WASD** — move (Russian layout ЦФЫВ works too)
+- **Arrow keys** or **WASD** — move
 - **Space** or **P** — pause
 - **Enter** — start / play again
 - On a phone: swipe on the board, or use the on-screen arrows
