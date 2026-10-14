@@ -5,6 +5,8 @@ the snake longer and the pace faster. Single player, no dependencies, no build s
 
 Download `index.html` and open it in any browser — the whole game is that one file.
 
+![Snake ach in play](screenshot.png)
+
 ## Play
 
 - **Arrow keys** or **WASD** — move (Russian layout ЦФЫВ works too)
