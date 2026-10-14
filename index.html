@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Snake ach — съешь свою ачивку</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --line: #21262d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --snake: #3fb950;
+    --snake-head: #56d364;
+    --gold: #d29922;
+    --gold-light: #e3b341;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: radial-gradient(circle at 50% 0%, #161b22 0%, var(--bg) 60%);
+    color: var(--text);
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 18px 14px 26px;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  header { text-align: center; }
+  h1 {
+    margin: 0;
+    font-size: 22px;
+    letter-spacing: .3px;
+  }
+  h1 span { color: var(--gold-light); }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  .hud {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .hud div {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .hud b { font-size: 18px; font-variant-numeric: tabular-nums; }
+  .hud small { color: var(--muted); font-size: 12px; }
+  .stage { position: relative; line-height: 0; }
+  canvas {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+    touch-action: none;
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: rgba(13, 17, 23, .86);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    padding: 20px;
+    line-height: 1.45;
+  }
+  #overlay[hidden] { display: none; }
+  #overlay h2 { margin: 0; font-size: 20px; }
+  #overlay p { margin: 0; color: var(--muted); font-size: 14px; }
+  #overlay .big { color: var(--gold-light); font-size: 26px; font-weight: 600; }
+  kbd {
+    background: #21262d;
+    border: 1px solid #30363d;
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 1px 5px;
+    font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--text);
+  }
+  #toast {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translate(-50%, -14px);
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: #1c1400;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    opacity: 0;
+    transition: opacity .25s, transform .25s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .pad {
+    display: none;
+    gap: 8px;
+    grid-template-columns: repeat(3, 54px);
+    grid-template-rows: repeat(2, 54px);
+  }
+  .pad button {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-size: 20px;
+    border-radius: 12px;
+  }
+  .pad button:active { background: #21262d; }
+  .pad .up { grid-area: 1 / 2; }
+  .pad .left { grid-area: 2 / 1; }
+  .pad .down { grid-area: 2 / 2; }
+  .pad .right { grid-area: 2 / 3; }
+  footer { color: var(--muted); font-size: 12px; text-align: center; max-width: 480px; }
+  @media (pointer: coarse) { .pad { display: grid; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Snake <span>ach</span></h1>
+  <p>Кушай YOLO-ачивки и расти. Рекорд остаётся в этом браузере.</p>
+</header>
+
+<div class="hud">
+  <div><small>Счёт</small><b id="score">0</b></div>
+  <div><small>Рекорд</small><b id="best">0</b></div>
+</div>
+
+<div class="stage">
+  <canvas id="game" width="480" height="480"></canvas>
+  <div id="toast"></div>
+  <div id="overlay">
+    <h2 id="ov-title">Готов?</h2>
+    <p id="ov-text">Стрелки или WASD — движение. <kbd>Space</kbd> — пауза.</p>
+    <p class="big" id="ov-score"></p>
+    <p id="ov-hint">Нажми <kbd>Enter</kbd> или ткни в поле, чтобы начать</p>
+  </div>
+</div>
+
+<div class="pad">
+  <button class="up" data-dir="up">▲</button>
+  <button class="left" data-dir="left">◀</button>
+  <button class="down" data-dir="down">▼</button>
+  <button class="right" data-dir="right">▶</button>
+</div>
+
+<footer>Один файл, без зависимостей: скачал — открыл — играешь.</footer>
+
+<script>
+const CELLS = 20;
+const BEST_KEY = "snakeAchBest";
+const ACHIEVEMENTS = [
+  [3, "Quickdraw ⚡"],
+  [6, "Pull Shark 🦈"],
+  [10, "YOLO 🤠"],
+  [16, "Starstruck ⭐"],
+  [24, "Galaxy Brain 🧠"],
+];
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const scoreEl = document.getElementById("score");
+const bestEl = document.getElementById("best");
+const overlay = document.getElementById("overlay");
+const ovTitle = document.getElementById("ov-title");
+const ovText = document.getElementById("ov-text");
+const ovScore = document.getElementById("ov-score");
+const ovHint = document.getElementById("ov-hint");
+const toast = document.getElementById("toast");
+
+let cell = canvas.width / CELLS;
+let snake, dir, queuedDir, food, score, best, eaten, tickMs, acc, lastTs, running, paused, over;
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  const cssSize = canvas.clientWidth || 480;
+  canvas.width = cssSize * dpr;
+  canvas.height = cssSize * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cell = cssSize / CELLS;
+  draw();
+}
+
+function loadBest() {
+  let stored = 0;
+  try { stored = Number(localStorage.getItem(BEST_KEY)); } catch (e) { stored = 0; }
+  best = Number.isFinite(stored) && stored > 0 ? stored : 0;
+  bestEl.textContent = best;
+}
+
+function saveBest() {
+  if (score > best) {
+    best = score;
+    try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) { /* приватный режим */ }
+    bestEl.textContent = best;
+  }
+}
+
+// Первая ачивка всегда прямо по курсу — первый укус без погони.
+function spawnFood(first) {
+  if (first) return { x: 12, y: 10 };
+  const free = [];
+  for (let y = 0; y < CELLS; y++) {
+    for (let x = 0; x < CELLS; x++) {
+      if (!snake.some((s) => s.x === x && s.y === y)) free.push({ x, y });
+    }
+  }
+  return free[Math.floor(Math.random() * free.length)] || { x: 0, y: 0 };
+}
+
+function reset() {
+  snake = [{ x: 6, y: 10 }, { x: 5, y: 10 }, { x: 4, y: 10 }];
+  dir = { x: 1, y: 0 };
+  queuedDir = null;
+  food = spawnFood(true);
+  score = 0;
+  eaten = 0;
+  tickMs = 145;
+  acc = 0;
+  lastTs = 0;
+  running = false;
+  paused = false;
+  over = false;
+  scoreEl.textContent = "0";
+  overlay.hidden = false;
+  ovTitle.textContent = "Готов?";
+  ovText.innerHTML = "Стрелки или WASD — движение. <kbd>Space</kbd> — пауза.";
+  ovScore.textContent = "";
+  ovHint.innerHTML = 'Нажми <kbd>Enter</kbd> или ткни в поле, чтобы начать';
+  draw();
+}
+
+function start() {
+  if (over) reset();
+  overlay.hidden = true;
+  running = true;
+  paused = false;
+  lastTs = 0;
+}
+
+function gameOver() {
+  running = false;
+  over = true;
+  saveBest();
+  overlay.hidden = false;
+  ovTitle.textContent = "Игра окончена";
+  ovText.textContent = `Съедено ачивок: ${eaten}`;
+  ovScore.textContent = `Счёт ${score}`;
+  ovHint.innerHTML = score >= best && score > 0
+    ? 'Новый рекорд! <kbd>Enter</kbd> — сыграть ещё'
+    : `Рекорд ${best}. <kbd>Enter</kbd> — сыграть ещё`;
+  draw();
+}
+
+function turn(x, y) {
+  if (!running) return;
+  if (dir.x + x === 0 && dir.y + y === 0) return;
+  queuedDir = { x, y };
+}
+
+function step() {
+  if (queuedDir) {
+    dir = queuedDir;
+    queuedDir = null;
+  }
+  const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+  if (head.x < 0 || head.y < 0 || head.x >= CELLS || head.y >= CELLS) return gameOver();
+  const grows = head.x === food.x && head.y === food.y;
+  const body = grows ? snake : snake.slice(0, -1);
+  if (body.some((s) => s.x === head.x && s.y === head.y)) return gameOver();
+  snake.unshift(head);
+  if (grows) {
+    score += 10;
+    eaten += 1;
+    scoreEl.textContent = score;
+    tickMs = Math.max(75, 145 - eaten * 4);
+    food = spawnFood(false);
+    const milestone = ACHIEVEMENTS.find(([n]) => n === eaten);
+    if (milestone) showToast(`Ачивка: ${milestone[1]}`);
+  } else {
+    snake.pop();
+  }
+}
+
+let toastTimer = 0;
+function showToast(text) {
+  toast.textContent = text;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove("show"), 1400);
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function draw() {
+  const size = CELLS * cell;
+  ctx.fillStyle = "#161b22";
+  ctx.fillRect(0, 0, size, size);
+
+  ctx.strokeStyle = "#1f2530";
+  ctx.lineWidth = 1;
+  for (let i = 1; i < CELLS; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * cell, 0);
+    ctx.lineTo(i * cell, size);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, i * cell);
+    ctx.lineTo(size, i * cell);
+    ctx.stroke();
+  }
+
+  if (food) {
+    const pad = cell * 0.14;
+    ctx.fillStyle = "#d29922";
+    roundRect(food.x * cell + pad, food.y * cell + pad, cell - pad * 2, cell - pad * 2, cell * 0.28);
+    ctx.fillStyle = "#1c1400";
+    ctx.font = `700 ${Math.max(7, cell * 0.32)}px -apple-system, Segoe UI, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("YOLO", food.x * cell + cell / 2, food.y * cell + cell / 2 + cell * 0.04);
+  }
+
+  snake.forEach((s, i) => {
+    const pad = i === 0 ? cell * 0.06 : cell * 0.12;
+    ctx.fillStyle = i === 0 ? "#56d364" : "#3fb950";
+    roundRect(s.x * cell + pad, s.y * cell + pad, cell - pad * 2, cell - pad * 2, cell * 0.26);
+  });
+
+  if (paused) {
+    ctx.fillStyle = "rgba(13, 17, 23, .7)";
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = "#e6edf3";
+    ctx.font = `600 ${size * 0.055}px -apple-system, Segoe UI, sans-serif`;
+    ctx.fillText("Пауза", size / 2, size / 2);
+  }
+}
+
+function loop(ts) {
+  requestAnimationFrame(loop);
+  if (!running) return;
+  if (paused) { lastTs = ts; return; }
+  if (!lastTs) lastTs = ts;
+  acc += ts - lastTs;
+  lastTs = ts;
+  while (acc >= tickMs) {
+    acc -= tickMs;
+    step();
+    if (!running) break;
+  }
+  draw();
+}
+
+document.addEventListener("keydown", (e) => {
+  const k = e.key;
+  const map = {
+    ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
+    w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0],
+    ц: [0, -1], ы: [0, 1], ф: [-1, 0], в: [1, 0],
+  };
+  const lower = k.length === 1 ? k.toLowerCase() : k;
+  if (map[lower]) {
+    e.preventDefault();
+    turn(map[lower][0], map[lower][1]);
+    if (!running && !over) start();
+    return;
+  }
+  if (k === " " || lower === "p") {
+    e.preventDefault();
+    if (over) return start();
+    if (!running) return start();
+    paused = !paused;
+    if (paused) { overlay.hidden = false; ovTitle.textContent = "Пауза"; ovText.textContent = "Space — продолжить"; ovScore.textContent = ""; ovHint.textContent = ""; }
+    else overlay.hidden = true;
+    draw();
+    return;
+  }
+  if (k === "Enter") {
+    e.preventDefault();
+    start();
+  }
+});
+
+document.querySelectorAll(".pad button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const d = btn.dataset.dir;
+    const map = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[d];
+    if (!running && !over) start();
+    turn(map[0], map[1]);
+  });
+});
+
+let touchStart = null;
+canvas.addEventListener("pointerdown", (e) => {
+  touchStart = { x: e.clientX, y: e.clientY };
+  if (!running && !over) start();
+});
+canvas.addEventListener("pointerup", (e) => {
+  if (!touchStart) return;
+  const dx = e.clientX - touchStart.x;
+  const dy = e.clientY - touchStart.y;
+  touchStart = null;
+  if (Math.abs(dx) < 18 && Math.abs(dy) < 18) return;
+  if (Math.abs(dx) > Math.abs(dy)) turn(dx > 0 ? 1 : -1, 0);
+  else turn(0, dy > 0 ? 1 : -1);
+});
+
+window.addEventListener("resize", resize);
+loadBest();
+reset();
+resize();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
