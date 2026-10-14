@@ -1,11 +1,11 @@
-# snake-ach
+# snake-yolo
 
 A tiny Snake game where the food is a **YOLO** achievement badge: every badge you eat makes
 the snake longer and the pace faster. Single player, no dependencies, no build step.
 
 Download `index.html` and open it in any browser — the whole game is that one file.
 
-![Snake ach in play](screenshot.png)
+![Snake yolo in play](screenshot.png)
 
 ## Play
 
